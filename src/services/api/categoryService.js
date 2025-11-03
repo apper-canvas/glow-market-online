@@ -254,5 +254,3 @@ const categoryService = {
 };
 
 export default categoryService;
-
-export default categoryService;

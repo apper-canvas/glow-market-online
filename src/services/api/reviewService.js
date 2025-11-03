@@ -225,5 +225,3 @@ const reviewService = {
 };
 
 export default reviewService;
-
-export default reviewService;

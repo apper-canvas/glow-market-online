@@ -314,5 +314,3 @@ const collectionService = {
 };
 
 export default collectionService;
-
-export default collectionService;
