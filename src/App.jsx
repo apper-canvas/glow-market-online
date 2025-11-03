@@ -1,14 +1,18 @@
 import { createContext, useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer } from "react-toastify";
 import { router } from '@/router';
 import store from '@/store';
+import { setUser, clearUser } from '@/store/userSlice';
 
 // Create auth context
 export const AuthContext = createContext(null);
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isInitialized, setIsInitialized] = useState(false);
   const [authMethods, setAuthMethods] = useState({});
   
@@ -23,10 +27,11 @@ function App() {
     
     // Authentication methods to share via context
     const methods = {
-      logout: async () => {
+logout: async () => {
         try {
           await ApperUI.logout();
-          window.location.href = '/login';
+          dispatch(clearUser());
+          navigate('/login');
         } catch (error) {
           console.error("Logout failed:", error);
         }
@@ -50,40 +55,45 @@ function App() {
                            currentPath.includes('/callback') || currentPath.includes('/error') || 
                            currentPath.includes('/prompt-password') || currentPath.includes('/reset-password');
         
-        if (user) {
+if (user) {
           // User is authenticated
           if (redirectPath) {
-            window.location.href = redirectPath;
+            navigate(redirectPath);
           } else if (!isAuthPage) {
             if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
-              window.location.href = currentPath;
+              navigate(currentPath);
             } else {
-              window.location.href = '/';
+              navigate('/');
             }
           } else {
-            window.location.href = '/';
+            navigate('/');
           }
+          // Store user information in Redux
+          dispatch(setUser(JSON.parse(JSON.stringify(user))));
         } else {
           // User is not authenticated
           if (!isAuthPage) {
-            window.location.href = currentPath.includes('/signup')
-              ? `/signup?redirect=${currentPath}`
-              : currentPath.includes('/login')
-              ? `/login?redirect=${currentPath}`
-              : '/login';
+            navigate(
+              currentPath.includes('/signup')
+                ? `/signup?redirect=${currentPath}`
+                : currentPath.includes('/login')
+                ? `/login?redirect=${currentPath}`
+                : '/login'
+            );
           } else if (redirectPath) {
             if (
               !['error', 'signup', 'login', 'callback', 'prompt-password', 'reset-password'].some((path) => currentPath.includes(path))
             ) {
-              window.location.href = `/login?redirect=${redirectPath}`;
+              navigate(`/login?redirect=${redirectPath}`);
             } else {
-              window.location.href = currentPath;
+              navigate(currentPath);
             }
           } else if (isAuthPage) {
-            window.location.href = currentPath;
+            navigate(currentPath);
           } else {
-            window.location.href = '/login';
+            navigate('/login');
           }
+          dispatch(clearUser());
         }
       },
       onError: function(error) {
@@ -107,23 +117,29 @@ function App() {
     );
   }
   
+return (
+    <AuthContext.Provider value={authMethods}>
+      <RouterProvider router={router} />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </AuthContext.Provider>
+  );
+}
+
+function App() {
   return (
     <Provider store={store}>
-      <AuthContext.Provider value={authMethods}>
-        <RouterProvider router={router} />
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
-      </AuthContext.Provider>
+      <AppContent />
     </Provider>
   );
 }

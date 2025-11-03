@@ -1,14 +1,18 @@
-import { useEffect, useContext } from 'react';
+import { useEffect, useContext, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '@/App';
 
 function Login() {
   const authMethods = useContext(AuthContext);
+  const loginInitialized = useRef(false);
   
   useEffect(() => {
-    // Show login UI in this component
-    const { ApperUI } = window.ApperSDK;
-    ApperUI.showLogin("#authentication");
+    if (!loginInitialized.current) {
+      // Show login UI in this component
+      const { ApperUI } = window.ApperSDK;
+      ApperUI.showLogin("#authentication");
+      loginInitialized.current = true;
+    }
   }, []);
   
   return (
