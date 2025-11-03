@@ -1,24 +1,41 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import SearchBar from "@/components/molecules/SearchBar";
-import CartSidebar from "@/components/organisms/CartSidebar";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/hooks/useCart";
+import { AuthContext } from "@/App";
 import categoryService from "@/services/api/categoryService";
+import ApperIcon from "@/components/ApperIcon";
+import Badge from "@/components/atoms/Badge";
+import Button from "@/components/atoms/Button";
+import CartSidebar from "@/components/organisms/CartSidebar";
+import SearchBar from "@/components/molecules/SearchBar";
+
+const LogoutButton = () => {
+  const authMethods = useContext(AuthContext);
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={authMethods?.logout}
+      className="flex items-center gap-2"
+    >
+      <ApperIcon name="LogOut" className="w-4 h-4" />
+      <span className="hidden sm:inline">Logout</span>
+    </Button>
+  );
+};
 
 const Header = () => {
   const navigate = useNavigate();
   const { getCartItemCount } = useCart();
   const [categories, setCategories] = useState([]);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showCartSidebar, setShowCartSidebar] = useState(false);
   const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
+  const [showCartSidebar, setShowCartSidebar] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const cartItemCount = getCartItemCount();
-
   useEffect(() => {
     loadCategories();
     
@@ -131,7 +148,8 @@ const Header = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center space-x-3">
+<div className="flex items-center space-x-3">
+              <LogoutButton />
               {/* Search - Mobile */}
               <div className="md:hidden">
                 <Button variant="ghost" size="icon">
