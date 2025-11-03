@@ -1,11 +1,10 @@
-import { createContext, useEffect, useState } from 'react';
-import { RouterProvider } from 'react-router-dom';
-import { Provider, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useEffect, useState } from "react";
+import { RouterProvider, useNavigate } from "react-router-dom";
+import { Provider, useDispatch } from "react-redux";
 import { ToastContainer } from "react-toastify";
-import { router } from '@/router';
-import store from '@/store';
-import { setUser, clearUser } from '@/store/userSlice';
+import { router } from "@/router";
+import { clearUser, setUser } from "@/store/userSlice";
+import store from "@/store/index";
 
 // Create auth context
 export const AuthContext = createContext(null);
@@ -14,31 +13,21 @@ function AppContent() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [authMethods, setAuthMethods] = useState({});
   
   // Initialize ApperUI once when the app loads
   useEffect(() => {
+    // Check if ApperSDK is available
+    if (!window.ApperSDK) {
+      console.error('ApperSDK not loaded');
+      return;
+    }
+
     const { ApperClient, ApperUI } = window.ApperSDK;
     
     const client = new ApperClient({
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
-    
-    // Authentication methods to share via context
-    const methods = {
-logout: async () => {
-        try {
-          await ApperUI.logout();
-          dispatch(clearUser());
-          navigate('/login');
-        } catch (error) {
-          console.error("Logout failed:", error);
-        }
-      }
-    };
-    
-    setAuthMethods(methods);
     
     // Initialize but don't show login yet
     ApperUI.setup(client, {
@@ -55,7 +44,7 @@ logout: async () => {
                            currentPath.includes('/callback') || currentPath.includes('/error') || 
                            currentPath.includes('/prompt-password') || currentPath.includes('/reset-password');
         
-if (user) {
+        if (user) {
           // User is authenticated
           if (redirectPath) {
             navigate(redirectPath);
@@ -92,42 +81,61 @@ if (user) {
             navigate(currentPath);
           } else {
             navigate('/login');
-          }
+}
           dispatch(clearUser());
         }
       },
       onError: function(error) {
         console.error("Authentication failed:", error);
-        setIsInitialized(true);
+        setIsInitialized(true); // Still allow app to initialize even with auth error
       }
     });
-  }, []);
+  }, [navigate, dispatch]); // Include dependencies
   
-  // Don't render routes until initialization is complete
+  // Authentication methods to share via context
+  const authMethods = {
+    isInitialized,
+    logout: async () => {
+      try {
+        const { ApperUI } = window.ApperSDK;
+        await ApperUI.logout();
+        dispatch(clearUser());
+        navigate('/login');
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    }
+  };
+  
+  // Don't render content until initialization is complete
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center space-y-4">
-          <svg className="animate-spin h-12 w-12 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-        </div>
+      <div className="loading flex items-center justify-center min-h-screen w-full bg-background">
+        <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2v4"></path>
+          <path d="m16.2 7.8 2.9-2.9"></path>
+          <path d="M18 12h4"></path>
+          <path d="m16.2 16.2 2.9 2.9"></path>
+          <path d="M12 18v4"></path>
+          <path d="m4.9 19.1 2.9-2.9"></path>
+          <path d="M2 12h4"></path>
+          <path d="m4.9 4.9 2.9 2.9"></path>
+        </svg>
       </div>
     );
   }
   
-return (
+  return (
     <AuthContext.Provider value={authMethods}>
-      <RouterProvider router={router} />
-      <ToastContainer
+      <div id="authentication" style={{ display: 'none' }} />
+      <ToastContainer 
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
-        newestOnTop={false}
+        newestOnTop
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+pauseOnFocusLoss
         draggable
         pauseOnHover
         theme="light"
@@ -139,7 +147,9 @@ return (
 function App() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <RouterProvider router={router}>
+        <AppContent />
+      </RouterProvider>
     </Provider>
   );
 }
