@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 const CategoryCard = ({ category, size = "md" }) => {
   const navigate = useNavigate();
 
